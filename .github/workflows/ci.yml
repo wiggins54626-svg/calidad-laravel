@@ -1,0 +1,39 @@
+name: CI Laravel
+
+on:
+  push:
+    branches: [develop, 'feature/**', 'release/**', 'hotfix/**']
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  calidad:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite
+          coverage: none
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Preparar entorno
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Linting (Laravel Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Análisis estático (PHPStan)
+        run: ./vendor/bin/phpstan analyse
+
+      - name: Pruebas unitarias y de funcionalidad
+        run: php artisan test
